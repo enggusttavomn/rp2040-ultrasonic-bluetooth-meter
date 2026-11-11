@@ -4,6 +4,21 @@ Um sistema completo de medição de distância ultrassônica implementado para o
 microcontrolador Raspberry Pi Pico, utilizando sensor HCSR04, display OLED,
 comunicação Bluetooth e interface com botões.
 
+## Leitura rápida
+
+Firmware acadêmico em **C / Pico SDK** para medição ultrassônica, exibição
+em OLED e transmissão por Bluetooth via UART.
+
+| O que revisar | Arquivo |
+|---|---|
+| Medição e controle dos periféricos | [main.c](main.c) |
+| Driver do display | [inc/ssd1306_i2c.c](inc/ssd1306_i2c.c) |
+| Diagrama do sistema | [img/diagrama.png](img/diagrama.png) |
+| Compilação | [CMakeLists.txt](CMakeLists.txt) |
+
+A execução requer a placa, os periféricos e o Pico SDK.
+O arquivo `build/main.uf2` é gerado pela compilação e não está versionado.
+
 ## 📏 Descrição do Sistema
 
 O sistema implementa um medidor de distância ultrassônico que utiliza o sensor
@@ -203,8 +218,8 @@ O sistema utiliza o sensor HCSR04 com as seguintes características:
 ### 1. Clonar o Repositório
 
 ```bash
-git clone https://gitlab.unicamp.br/EA801_2025S2/tA/G4/P2.git
-cd P2
+git clone https://github.com/enggusttavomn/regua-inteligente-ultrassonica-rp2040.git
+cd regua-inteligente-ultrassonica-rp2040
 ```
 
 ### 2. Configurar e Executar no VSCode
@@ -235,9 +250,9 @@ cd P2
 
 Se você apenas quer usar a régua digital sem desenvolver ou depurar:
 
-1. **Baixar o firmware**:
-   - Acesse a pasta `build/` do projeto
-   - Localize o arquivo [`main.uf2`](build\main.uf2)
+1. **Compilar o firmware**:
+   - Compile o projeto com o Pico SDK, conforme as etapas anteriores.
+   - Localize o arquivo gerado `build/main.uf2`; esse binário não está versionado.
 
 2. **Carregar na Raspberry Pi Pico**:
    - Mantenha pressionado o botão BOOTSEL da Pico
