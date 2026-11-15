@@ -1,4 +1,4 @@
-# Régua Inteligente - Raspberry Pi Pico
+# Medidor ultrassônico com Bluetooth
 
 Um sistema completo de medição de distância ultrassônica implementado para o
 microcontrolador Raspberry Pi Pico, utilizando sensor HCSR04, display OLED,
