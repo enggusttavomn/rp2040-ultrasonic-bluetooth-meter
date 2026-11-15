@@ -20,6 +20,7 @@
 #include "hardware/i2c.h"
 #include "hardware/uart.h"
 #include "inc/ssd1306.h"
+#include "inc/hcsr04.h"
 
 /**
  * @defgroup PinDefinitions Definições de Pinagem
@@ -77,35 +78,14 @@ static volatile uint32_t flag_a = 0;
  *          2. Aguarda o pino ECHO subir (início da reflexão)
  *          3. Aguarda o pino ECHO descer (fim da reflexão)
  *          4. Calcula a distância baseada no tempo de eco
- * @return float Distância medida em centímetros
+ * @param distance_cm Recebe a distância em centímetros em caso de sucesso.
+ * @return true para leitura válida; false para timeout ou fora de alcance.
  * @note A velocidade do som é considerada como 343 m/s
  * @note Fórmula: distância = (tempo_eco_us / 58.0) cm
- * @warning Esta função é bloqueante e pode demorar até 30ms para retornar
+ * @warning Esta função é bloqueante; cada espera pelo ECHO tem timeout de 30ms.
  */
-float measure_distance_cm() {
-    // Pulso no TRIG - protocolo HCSR04 requer pulso de 10μs
-    gpio_put(TRIG_PIN, 0);
-    sleep_us(2);  // Garante que o sinal está baixo
-    gpio_put(TRIG_PIN, 1);
-    sleep_us(10);  // Pulso de 10μs conforme especificação
-    gpio_put(TRIG_PIN, 0);
-
-    // Espera ECHO subir - início da reflexão do ultrassom
-    absolute_time_t start, end;
-    while (gpio_get(ECHO_PIN) == 0) {
-        start = get_absolute_time();  // Marca início do eco
-    }
-    while (gpio_get(ECHO_PIN) == 1) {
-        end = get_absolute_time();  // Marca fim do eco
-    }
-
-    // Calcula duração do pulso em microssegundos
-    int64_t pulse_us = absolute_time_diff_us(start, end);
-
-    // Distancia em cm (velocidade do som = 343 m/s -> 29.1 us/cm ida e volta)
-    // Fórmula: distância = (tempo_eco_us / 58.0) cm
-    return (float)pulse_us / 58.0f;
-
+bool measure_distance_cm(float *distance_cm) {
+    return hcsr04_measure_cm(TRIG_PIN, ECHO_PIN, distance_cm);
 }
 
 /**
@@ -186,21 +166,31 @@ int main() {
         if (flag_a) {
             flag_a = 0;
 
-            float dist = measure_distance_cm();
+            float dist;
+            bool valid = measure_distance_cm(&dist);
 
             // Escreve no display OLED  
             memset(ssd, 0, ssd1306_buffer_length);
             char msg[32];
-            snprintf(msg, sizeof(msg), "Dist: %.1f cm", dist);
+            if (valid) {
+                snprintf(msg, sizeof(msg), "Dist: %.1f cm", dist);
+            } else {
+                snprintf(msg, sizeof(msg), "Sem eco/alcance");
+            }
             ssd1306_draw_string(ssd, 0, 0, " HC-SR04");
             ssd1306_draw_string(ssd, 0, 16, msg);
             render_on_display(ssd, &frame_area);
 
             // Envia por bluetooth (HC-06)
             char bt_msg[64];
-            snprintf(bt_msg, sizeof(bt_msg), "Dist: %.2f cm\r\n", dist);
+            if (valid) {
+                snprintf(bt_msg, sizeof(bt_msg), "Dist: %.2f cm\r\n", dist);
+            } else {
+                snprintf(bt_msg, sizeof(bt_msg), "ERRO: sem eco ou fora de alcance\r\n");
+            }
             uart_puts(UART_ID, bt_msg);
         }
+        tight_loop_contents();
     }
     return 0;
 }

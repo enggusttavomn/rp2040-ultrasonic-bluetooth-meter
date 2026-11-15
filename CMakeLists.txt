@@ -34,6 +34,7 @@ pico_sdk_init()
 # Adiciona os arquivos do seu projeto
 add_executable(main
     main.c
+    src/hcsr04.c
     inc/ssd1306_i2c.c
 )
 
@@ -41,7 +42,7 @@ add_executable(main
 pico_set_program_version(main "1.0")
 
 # Configura I/O: ativa UART e USB
-pico_enable_stdio_uart(main 1)
+pico_enable_stdio_uart(main 0) # UART0 (GPIO0/1) is reserved for Bluetooth.
 pico_enable_stdio_usb(main 1)
 
 # Bibliotecas necessárias para o projeto integrado
@@ -49,6 +50,7 @@ target_link_libraries(main
     pico_stdlib
     hardware_adc
     hardware_i2c
+    hardware_uart
     hardware_pwm
     hardware_pio
     pico_multicore
@@ -57,6 +59,7 @@ target_link_libraries(main
 # Diretórios onde estão seus headers personalizados
 target_include_directories(main PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/inc
 )
 
 # Opções de compilação

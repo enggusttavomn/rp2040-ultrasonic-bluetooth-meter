@@ -202,8 +202,43 @@ O sistema utiliza o sensor HCSR04 com as seguintes características:
 3. **Configure conexão**: 9600 baud
 4. **Monitore dados**: Receba medições em tempo real no formato "Dist: X.XX cm"
 
-## 🚀 Instalação e Configuração
+## Compilação e verificação automatizada
 
+Para compilar sem depender do editor, instale CMake 3.13+, um gerador
+(Ninja ou Make), GNU Arm Embedded (`arm-none-eabi-gcc` e bibliotecas
+Newlib/C++) e o **Pico SDK 2.1.1**, incluindo o submódulo `lib/tinyusb`.
+Defina `PICO_SDK_PATH` com o caminho absoluto do SDK e execute na raiz:
+
+```bash
+cmake -S . -B build
+cmake --build build
+```
+
+O firmware é gerado em `build/main.uf2`. A extensão do VS Code é opcional.
+O workflow [Firmware](.github/workflows/firmware.yml) compila a cada push
+e pull request, confere o commit do SDK e disponibiliza o UF2 como artefato.
+O build verifica compilação e linkedição; os testes dos periféricos descritos
+abaixo exigem a placa e não são executados pelo CI.
+
+
+O driver de distância está isolado em `src/hcsr04.c`, com interface em
+`inc/hcsr04.h`. Ausência de eco, ECHO preso e valores fora de 2–400 cm
+retornam falha sem bloquear indefinidamente; OLED e Bluetooth mostram o erro.
+A UART0 é exclusiva do Bluetooth; o console usa USB.
+
+Os testes de conversão e timeout rodam no computador, sem Pico SDK:
+
+```bash
+cmake -S tests -B build/host
+cmake --build build/host
+ctest --test-dir build/host --output-on-failure
+```
+
+Em geradores com múltiplas configurações, adicione `-C Debug` ao comando
+`ctest`. No Windows, um diretório curto de build evita o limite de caminhos
+de algumas instalações do MSBuild.
+
+## 🚀 Instalação e Configuração
 ### Pré-requisitos
 
 - **Visual Studio Code** com as seguintes extensões:
@@ -298,7 +333,7 @@ Todos os testes foram concluídos com resultado satisfatório
 -   A precisão pode variar com temperatura e umidade do ambiente
 -   O sistema não possui calibração automática para diferentes condições
 -   Não há salvamento de histórico de medições
--   Não há tratamento de erros para medições fora do alcance
+-   Medições sem eco ou fora de alcance são sinalizadas como erro, sem calibração automática.
 
 ## 🤝 Autores
 
